@@ -1,0 +1,4 @@
+port_usb4=true
+partner_pd=true
+usb_modes=usb2,usb4
+expected=wait

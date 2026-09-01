@@ -1,0 +1,26 @@
+[Unit]
+Description=Chrome EC Type-C mode selector
+After=systemd-udevd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cros-typec-selector daemon --live
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_NETLINK AF_UNIX
+ReadWritePaths=/sys/class/typec
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

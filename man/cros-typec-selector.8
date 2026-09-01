@@ -1,0 +1,40 @@
+.TH CROS-TYPEC-SELECTOR 8 "September 2026" "cros-typec-selector 0.1.0"
+.SH NAME
+cros-typec-selector \- select generic USB-C data modes on AP-driven Chrome EC systems
+.SH SYNOPSIS
+.B cros-typec-selector inspect
+.RI [ PORT ]
+.br
+.B cros-typec-selector decide
+.RI [ PORT ]
+.br
+.B cros-typec-selector reconcile
+.RI [ PORT ]
+.RI [ \-\-live ]
+.br
+.B cros-typec-selector daemon \-\-live
+.SH DESCRIPTION
+The selector reconciles Linux Type-C connector-class topology and chooses USB4, Thunderbolt compatibility, DisplayPort, or ordinary USB in that order. It derives decisions from USB-PD identity and alternate-mode data, not peripheral identifiers.
+.PP
+Inspect, decide, and reconcile are read-only unless
+.B \-\-live
+is explicit. The daemon requires that flag. Udev events are treated as hints and cause fresh enumeration. Discovery and mode-transition retries are bounded and cancelled on topology changes.
+.SH OPTIONS
+.TP
+.BI \-\-sysfs " PATH"
+Use an alternate Type-C class root, primarily for fixture inspection.
+.TP
+.B \-\-discovery-expired
+For diagnostic decisions, show the fail-safe result after the discovery deadline.
+.TP
+.B \-\-live
+Permit connector-class mode writes.
+.SH SECURITY BOUNDARY
+The program never authorizes Thunderbolt devices, invokes boltctl, changes the boltd store, or creates tunnels. Router authorization remains exclusively owned by boltd.
+.SH FILES
+.TP
+.I /sys/class/typec
+Linux Type-C connector class.
+.TP
+.I /sys/class/chromeos/cros_ec/ap_mode_entry
+Observable Chrome EC AP-driven entry capability.

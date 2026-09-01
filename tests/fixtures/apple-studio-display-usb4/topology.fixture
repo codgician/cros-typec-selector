@@ -1,0 +1,13 @@
+# Hardware-derived 2026-09-01; VID bits masked and product/serial identity omitted.
+port_usb4=true
+partner_pd=true
+partner_idh=0x4cc00000
+partner_vdo1=0x6d00007c
+partner_modes=8087:1:1,ff01:1:0x401c0045
+usb_modes=usb2,usb3,usb4
+cable_idh=0x1c600000
+cable_vdo1=0x110a2644
+cable_vdo2=0x00000000
+cable_revision=3.0
+cable_modes=8087:1:0x00030001
+expected=usb4

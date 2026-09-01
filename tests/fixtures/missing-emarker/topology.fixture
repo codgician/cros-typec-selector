@@ -1,0 +1,8 @@
+port_usb4=true
+partner_pd=true
+partner_idh=0x0c000000
+partner_vdo1=0x08000000
+partner_modes=ff01:1:1
+usb_modes=usb2,usb4
+discovery_expired=true
+expected=dp

@@ -1,0 +1,32 @@
+Subject: [PATCH] platform/chrome: cros_ec_typec: mark AP-driven altmodes for mode selection
+
+The DisplayPort alternate-mode driver may request mode entry as soon as a
+partner mode binds.  On systems where the EC requires AP-driven mode entry,
+that races the userspace policy owner and can select DisplayPort before USB4
+capability discovery is coherent.
+
+Use the connector class mode-selection flag for partner and plug modes when
+the EC advertises AP-driven entry.  Drivers still bind and explicit sysfs
+activation remains available; automatic mode entry is suppressed only for
+systems that requested AP ownership.
+
+This changes no device matching and introduces no private EC protocol.
+
+---
+ drivers/platform/chrome/cros_ec_typec.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/platform/chrome/cros_ec_typec.c b/drivers/platform/chrome/cros_ec_typec.c
+index 000000000000..111111111111 100644
+--- a/drivers/platform/chrome/cros_ec_typec.c
++++ b/drivers/platform/chrome/cros_ec_typec.c
+@@ -725,6 +725,7 @@ static int cros_typec_register_altmodes(struct cros_typec_data *typec, int port_
+ 			desc.svid = sop_disc->svids[i].svid;
+ 			desc.mode = j + 1;
+ 			desc.vdo = sop_disc->svids[i].mode_vdo[j];
++			desc.mode_selection = typec->ap_driven_altmode;
+ 
+ 			if (is_partner)
+ 				amode = typec_partner_register_altmode(port->partner, &desc);
+-- 
+2.51.0

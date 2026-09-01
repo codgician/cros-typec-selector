@@ -1,0 +1,18 @@
+[package]
+name = "cros-typec-selector"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Generic USB-C mode selector for Chrome EC AP-driven mode entry"
+
+[dependencies]
+nix = { version = "0.31.3", features = ["poll"] }
+udev = "0.9.3"
+
+[lib]
+name = "cros_typec_selector"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cros-typec-selector"
+path = "src/main.rs"

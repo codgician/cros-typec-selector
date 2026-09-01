@@ -1,0 +1,6 @@
+port_usb4=true
+partner_pd=true
+partner_idh=0x08000000
+partner_vdo1=0x04000001
+usb_modes=usb2,usb3
+expected=ordinary
