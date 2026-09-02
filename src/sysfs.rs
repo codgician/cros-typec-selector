@@ -75,7 +75,7 @@ impl Sysfs {
             .transpose()?;
         let (usb4_link, supports_usb4) =
             find_usb4_link(&syspath, self.thunderbolt_root.as_deref())?;
-        let active_mode = active_mode(partner.as_ref());
+        let active_mode = active_mode(partner.as_ref(), usb4_link.as_ref());
         Ok(PortSnapshot {
             syspath,
             name: name.into(),
@@ -282,11 +282,12 @@ fn read_alt_mode(path: PathBuf) -> Result<AltMode> {
     })
 }
 
-fn active_mode(partner: Option<&PartnerSnapshot>) -> ActiveMode {
+fn active_mode(partner: Option<&PartnerSnapshot>, usb4_link: Option<&Usb4Link>) -> ActiveMode {
     let Some(partner) = partner else {
         return ActiveMode::None;
     };
-    if partner.usb_modes.active == Some(UsbMode::Usb4) {
+    if partner.usb_modes.active == Some(UsbMode::Usb4) || usb4_link.is_some_and(usb4_router_present)
+    {
         return ActiveMode::Usb4;
     }
     if let Some(mode) = partner.alt_modes.iter().find(|m| m.active) {
@@ -358,6 +359,57 @@ fn usb4_link(syspath: PathBuf) -> Result<Usb4Link> {
         syspath,
         domain_syspath,
     })
+}
+
+pub(crate) fn usb4_router_present(link: &Usb4Link) -> bool {
+    link.domain_syspath
+        .as_deref()
+        .is_some_and(downstream_router_present_in)
+}
+
+pub(crate) fn downstream_router_present_in(domain: &Path) -> bool {
+    let Ok(entries) = fs::read_dir(domain) else {
+        return false;
+    };
+    for entry in entries.filter_map(|entry| entry.ok()) {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else {
+            continue;
+        };
+        if is_downstream_router_name(name) {
+            return true;
+        }
+        if !is_host_router_name(name) {
+            continue;
+        }
+        let Ok(children) = fs::read_dir(entry.path()) else {
+            continue;
+        };
+        if children.filter_map(|child| child.ok()).any(|child| {
+            child
+                .file_name()
+                .to_str()
+                .is_some_and(is_downstream_router_name)
+        }) {
+            return true;
+        }
+    }
+    false
+}
+
+fn is_host_router_name(name: &str) -> bool {
+    router_route(name) == Some("0")
+}
+
+fn is_downstream_router_name(name: &str) -> bool {
+    router_route(name).is_some_and(|route| route != "0")
+}
+
+fn router_route(name: &str) -> Option<&str> {
+    let (domain, route) = name.split_once('-')?;
+    (domain.bytes().all(|byte| byte.is_ascii_digit())
+        && route.as_bytes().first().is_some_and(u8::is_ascii_digit))
+    .then_some(route)
 }
 
 fn physical_location(device: &Path) -> Result<Option<Vec<(&'static str, String)>>> {

@@ -1,6 +1,6 @@
 use cros_typec_selector::error::Error;
 use cros_typec_selector::sysfs::Sysfs;
-use cros_typec_selector::topology::{DataRole, UsbMode};
+use cros_typec_selector::topology::{ActiveMode, DataRole, UsbMode};
 use std::path::Path;
 
 fn fixture(name: &str) -> Sysfs {
@@ -51,6 +51,7 @@ fn associates_usb4_by_physical_location_not_numbers() {
         .port("port7")
         .unwrap();
     assert!(port.supports_usb4);
+    assert_eq!(port.active_mode, ActiveMode::Usb4);
     assert!(
         port.usb4_link
             .unwrap()

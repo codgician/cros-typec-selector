@@ -1,12 +1,13 @@
 use crate::error::{Error, Result};
 use crate::policy::{self, Candidate, Context, Decision};
 use crate::state::{PortState, RETRY_DELAYS};
-use crate::sysfs::{Operation, Sysfs, SysfsControl, TypecControl};
+use crate::sysfs::{
+    Operation, Sysfs, SysfsControl, TypecControl, downstream_router_present_in, usb4_router_present,
+};
 use crate::topology::{ActiveMode, PortSnapshot};
 use crate::udev::{EventHint, Monitor};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::fs;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -192,7 +193,8 @@ impl Daemon {
         };
         let ordered = policy::candidates(&port, context);
         let mut decision = policy::decide(&port, context);
-        if matches!(decision, Decision::Keep(ActiveMode::Usb4)) && !downstream_router_present(&port)
+        if matches!(decision, Decision::Keep(ActiveMode::Usb4))
+            && !port.usb4_link.as_ref().is_some_and(usb4_router_present)
         {
             decision = if expired {
                 ordered
@@ -531,62 +533,6 @@ fn target_active(
         Candidate::DisplayPort { .. } => matches!(port.active_mode, ActiveMode::DisplayPort { .. }),
         Candidate::OrdinaryUsb => port.active_mode == ActiveMode::None,
     }
-}
-
-fn downstream_router_present(port: &PortSnapshot) -> bool {
-    let Some(domain) = port
-        .usb4_link
-        .as_ref()
-        .and_then(|link| link.domain_syspath.as_ref())
-    else {
-        return false;
-    };
-    downstream_router_present_in(domain)
-}
-
-fn downstream_router_present_in(domain: &std::path::Path) -> bool {
-    let Ok(entries) = fs::read_dir(domain) else {
-        return false;
-    };
-    for entry in entries.filter_map(|entry| entry.ok()) {
-        let name = entry.file_name();
-        let Some(name) = name.to_str() else {
-            continue;
-        };
-        if is_downstream_router_name(name) {
-            return true;
-        }
-        if !is_host_router_name(name) {
-            continue;
-        }
-        let Ok(children) = fs::read_dir(entry.path()) else {
-            continue;
-        };
-        if children.filter_map(|child| child.ok()).any(|child| {
-            child
-                .file_name()
-                .to_str()
-                .is_some_and(is_downstream_router_name)
-        }) {
-            return true;
-        }
-    }
-    false
-}
-
-fn is_host_router_name(name: &str) -> bool {
-    router_route(name) == Some("0")
-}
-
-fn is_downstream_router_name(name: &str) -> bool {
-    router_route(name).is_some_and(|route| route != "0")
-}
-
-fn router_route(name: &str) -> Option<&str> {
-    let (domain, route) = name.split_once('-')?;
-    (domain.bytes().all(|byte| byte.is_ascii_digit())
-        && route.as_bytes().first().is_some_and(u8::is_ascii_digit))
-    .then_some(route)
 }
 
 pub fn operation_is_authorization(operation: &Operation) -> bool {
