@@ -3,7 +3,7 @@ use crate::topology::ActiveMode;
 use std::time::{Duration, Instant};
 
 pub const DISCOVERY_TIMEOUT: Duration = Duration::from_secs(5);
-pub const TRANSITION_TIMEOUT: Duration = Duration::from_secs(5);
+pub const TRANSITION_TIMEOUT: Duration = Duration::from_secs(30);
 pub const RETRY_DELAYS: [Duration; 3] = [
     Duration::from_millis(100),
     Duration::from_millis(300),

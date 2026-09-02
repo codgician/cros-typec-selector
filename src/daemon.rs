@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::policy::{self, Candidate, Context, Decision};
-use crate::state::{PortState, RETRY_DELAYS};
+use crate::state::{PortState, RETRY_DELAYS, TRANSITION_TIMEOUT};
 use crate::sysfs::{
     Operation, Sysfs, SysfsControl, TypecControl, downstream_router_present_in, usb4_router_present,
 };
@@ -358,7 +358,7 @@ impl Daemon {
                             initial,
                             generation,
                             |port| target_active(port, &target, usb4_domain.as_deref()),
-                            Duration::from_secs(5),
+                            TRANSITION_TIMEOUT,
                         )? {
                             report.events.push(ReconcileEvent::Active {
                                 port: initial.name.clone(),
